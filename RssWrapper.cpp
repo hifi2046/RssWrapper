@@ -8,10 +8,10 @@
 void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, float x, float y) {
     ::ad::rss::world::OccupiedRegion r;
     r.segmentId = 43;
-    r.lonRange.minimum=0;
-    r.lonRange.maximum=1;
-    r.latRange.minimum=0;
-    r.latRange.maximum=1;
+    r.lonRange.minimum=y-0.1;
+    r.lonRange.maximum=y+0.1;
+    r.latRange.minimum=x-0.1;
+    r.latRange.maximum=x+0.1;
     bounds.push_back(r);
 }
 
@@ -46,12 +46,12 @@ int main() {
     ::ad::rss::world::Object otherVehicle;
     egoVehicle.objectId=23;
     egoVehicle.objectType=::ad::rss::world::ObjectType::EgoVehicle;
-    calculateOccupiedRegions( egoVehicle.occupiedRegions, 215.3, -364.1 );
+    calculateOccupiedRegions( egoVehicle.occupiedRegions, 0.1, 0.3 );
     calculateLatLonVelocities( egoVehicle.velocity );
 
     otherVehicle.objectId=24;
     otherVehicle.objectType=::ad::rss::world::ObjectType::OtherVehicle;
-    calculateOccupiedRegions( otherVehicle.occupiedRegions, 225.3, -364.1 );
+    calculateOccupiedRegions( otherVehicle.occupiedRegions, 0.5, 0.7 );
     calculateLatLonVelocities( otherVehicle.velocity );
 
     // 计算道路数据
