@@ -4,6 +4,11 @@
 //#include "ad/rss/core/RssSituationExtraction.hpp"
 //#include "ad/rss/state/RssStateOperation.hpp"
 #include "ad/rss/core/RssCheck.hpp"
+#include "RssWrapper.h"
+#include <boost/python.hpp>
+#include <boost/python/module.hpp>
+#include <boost/python/def.hpp>
+using namespace boost::python;
 
 void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, float x, float y) {
     ::ad::rss::world::OccupiedRegion r;
@@ -22,7 +27,7 @@ void calculateLatLonVelocities(::ad::rss::world::Velocity &v) {
     v.speedLatMax = ::ad::physics::Speed(0);
 }
 
-int main() {
+int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     ::ad::rss::core::RssCheck rssCheck;
     ::ad::rss::situation::SituationSnapshot situationSnapshot;
     ::ad::rss::state::RssStateSnapshot rssStateSnapshot;
@@ -135,4 +140,19 @@ int main() {
     std::cout << "  lateralLeftRange: " << p.lateralLeftRange << std::endl;
 
     return 1;
+}
+
+BOOST_PYTHON_MODULE(rssw) {
+    class_<Lane>("Lane", init<double,double,double,double,double>())
+        .def_readwrite("x", &Lane::x)
+        .def_readwrite("y", &Lane::y)
+        .def_readwrite("length", &Lane::length)
+        .def_readwrite("width", &Lane::width)
+        .def_readwrite("heading", &Lane::heading);
+    class_<Vehicle>("Vehicle", init<double,double,double,double>())
+        .def_readwrite("x", &Vehicle::x)
+        .def_readwrite("y", &Vehicle::y)
+        .def_readwrite("heading", &Vehicle::heading)
+        .def_readwrite("velocity", &Vehicle::velocity);
+    def("RssCheck", RssCheck);
 }
