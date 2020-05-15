@@ -8,6 +8,8 @@
 #include <boost/python.hpp>
 #include <boost/python/module.hpp>
 #include <boost/python/def.hpp>
+#include <math.h>
+#define PI 3.14159265
 using namespace boost::python;
 
 //std::stringstream sWorld;
@@ -22,30 +24,57 @@ static char sState[10000];
 static char sResponse[10000];
 static char sRestriction[10000];
 
-void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, float x, float y) {
+void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, Lane &lane, Vehicle &v, float xx, float yy) {
     ::ad::rss::world::OccupiedRegion r;
+    double s, t, theta, cost, sint, x, y, x0, y0, ss, tt;
+    theta = lane.heading;
+    cost = cos((theta - 90)*PI/180.0);
+    sint = sin((theta - 90)*PI/180.0);
+    x = v.x;
+    y = v.y;
+    x0 = lane.x;
+    y0 = lane.y;
+    s = (y - y0)*cost - (x - x0)*sint;
+    t = (x - x0)*cost + (y - y0)*sint;
+    ss = s / lane.length;
+    tt = t / lane.width + 0.5;
     r.segmentId = 43;
-    r.lonRange.minimum=::ad::physics::ParametricValue(y);
-    r.lonRange.maximum=::ad::physics::ParametricValue(y);
-    r.latRange.minimum=::ad::physics::ParametricValue(x);
-    r.latRange.maximum=::ad::physics::ParametricValue(x);
+    r.lonRange.minimum=::ad::physics::ParametricValue(ss);
+    r.lonRange.maximum=::ad::physics::ParametricValue(ss);
+    r.latRange.minimum=::ad::physics::ParametricValue(tt);
+    r.latRange.maximum=::ad::physics::ParametricValue(tt);
+//    r.lonRange.minimum=::ad::physics::ParametricValue(s);
+//    r.lonRange.maximum=::ad::physics::ParametricValue(s);
+//    r.latRange.minimum=::ad::physics::ParametricValue(t);
+//    r.latRange.maximum=::ad::physics::ParametricValue(t);
     bounds.push_back(r);
 }
 
-void calculateLatLonVelocities(::ad::rss::world::Velocity &v) {
-    v.speedLonMin = ::ad::physics::Speed(20);
-    v.speedLonMax = ::ad::physics::Speed(20);
-    v.speedLatMin = ::ad::physics::Speed(0);
-    v.speedLatMax = ::ad::physics::Speed(0);
+void calculateLatLonVelocities(::ad::rss::world::Velocity &velocity, Lane &lane, Vehicle &v) {
+    double angle = (v.heading - lane.heading)*PI/180.0;
+    double vlon = std::abs(v.velocity*cos(angle));
+    double vlat = std::abs(v.velocity*sin(angle));
+//    velocity.speedLonMin = ::ad::physics::Speed(13);
+//    velocity.speedLonMax = ::ad::physics::Speed(13);
+//    velocity.speedLatMin = ::ad::physics::Speed(0);
+//    velocity.speedLatMax = ::ad::physics::Speed(0);
+    velocity.speedLonMin = ::ad::physics::Speed(vlon);
+    velocity.speedLonMax = ::ad::physics::Speed(vlon);
+    velocity.speedLatMin = ::ad::physics::Speed(vlat);
+    velocity.speedLatMax = ::ad::physics::Speed(vlat);
 }
 
-int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
+int RssCheck(Lane lane, Vehicle ego, Vehicle other, VControl &control) {
     ::ad::rss::core::RssCheck rssCheck;
     ::ad::rss::situation::SituationSnapshot situationSnapshot;
     ::ad::rss::state::RssStateSnapshot rssStateSnapshot;
     ::ad::rss::state::ProperResponse properResponse;
     ::ad::rss::world::WorldModel worldModel;
     ::ad::rss::world::AccelerationRestriction accelerationRestriction;
+    
+    if( lane.length < 5 ) lane.length = 10;
+    if( lane.width < 5 ) lane.width = 5;
+    lane.length *= 2;
     
     // 设置车辆动力学参数
     worldModel.timeIndex = 16;
@@ -63,13 +92,13 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     ::ad::rss::world::Object otherVehicle;
     egoVehicle.objectId=23;
     egoVehicle.objectType=::ad::rss::world::ObjectType::EgoVehicle;
-    calculateOccupiedRegions( egoVehicle.occupiedRegions, ego.x, ego.y );
-    calculateLatLonVelocities( egoVehicle.velocity );
+    calculateOccupiedRegions( egoVehicle.occupiedRegions, lane, ego, 0.1, 0.3 );
+    calculateLatLonVelocities( egoVehicle.velocity, lane, ego );
 
     otherVehicle.objectId=24;
     otherVehicle.objectType=::ad::rss::world::ObjectType::OtherVehicle;
-    calculateOccupiedRegions( otherVehicle.occupiedRegions, other.x, other.y );
-    calculateLatLonVelocities( otherVehicle.velocity );
+    calculateOccupiedRegions( otherVehicle.occupiedRegions, lane, other, 0.5, 0.3 );
+    calculateLatLonVelocities( otherVehicle.velocity, lane, other );
 
     // 计算道路数据
     ::ad::rss::world::RoadArea roadArea;
@@ -77,9 +106,9 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     ::ad::rss::world::LaneSegment laneSegment;
     int length = lane.length;
     int width = lane.width;
-    uint64_t lid;
-    laneSegment.id = 43;
-    if ( laneSegment.id < 0 )
+//    uint64_t lid;
+    laneSegment.id = lane.id;
+    if ( laneSegment.id > 0 )
         laneSegment.drivingDirection = ::ad::rss::world::LaneDrivingDirection::Negative;
     else
         laneSegment.drivingDirection = ::ad::rss::world::LaneDrivingDirection::Positive;
@@ -103,23 +132,10 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     scene.egoVehicleRoad = roadArea;
     worldModel.scenes.push_back(scene);
     
-    // 调用RSS检查主函数
-    rssCheck.calculateAccelerationRestriction(worldModel, situationSnapshot, rssStateSnapshot, properResponse, accelerationRestriction);
-
-    // 将安全限制转化为控制参数，todo
-
-//    sWorld.clear();
-//    sSituation.clear();
-//    sState.clear();
-//    sResponse.clear();
-//    sRestriction.clear();
-    
-//    sWorld << worldModel << std::endl;
-//    std::cout << worldModel << std::endl;
-
-    // 查看输入适配
-    auto& dyn = worldModel.defaultEgoVehicleRssDynamics;
     std::string temp, tt;
+    // 查看输入适配
+//    std::cout << "start world log" << std::endl;
+//    auto& dyn = worldModel.defaultEgoVehicleRssDynamics;
     for( auto& x : worldModel.scenes) {
         tt = std::to_string(x.situationType);
         temp += "\n  - situationType:" + tt.substr(tt.rfind(':')+1);
@@ -135,14 +151,14 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
             temp += ", lonRange: " + std::to_string(r.lonRange.minimum) + " ~ " + std::to_string(r.lonRange.maximum);
             temp += ", latRange: " + std::to_string(r.latRange.minimum) + " ~ " + std::to_string(r.latRange.maximum) + "}";
         }
-        v = x.object;
-        temp += "\n    object: {objectId:" + std::to_string(v.objectId);
-        tt = std::to_string(v.objectType);
+        auto& v2 = x.object;
+        temp += "\n    object: {objectId:" + std::to_string(v2.objectId);
+        tt = std::to_string(v2.objectType);
         temp += ", objectType:" + tt.substr(tt.rfind(':')+1);
-        s = v.velocity;
+        s = v2.velocity;
         temp += ", velocity: {lon: " + std::to_string(s.speedLonMin) + "~" + std::to_string(s.speedLonMax);
         temp += ", lat: " + std::to_string(s.speedLatMin) + "~" + std::to_string(s.speedLatMax) + "}}";
-        for( auto& r : v.occupiedRegions) {
+        for( auto& r : v2.occupiedRegions) {
             temp += "\n      - occupiedRegion: {segmentId:" + std::to_string(r.segmentId);
             temp += ", lonRange: " + std::to_string(r.lonRange.minimum) + " ~ " + std::to_string(r.lonRange.maximum);
             temp += ", latRange: " + std::to_string(r.latRange.minimum) + " ~ " + std::to_string(r.latRange.maximum) + "}";
@@ -150,7 +166,54 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
 //        temp += "\n    objectRssDynamics" + std::to_string(x.objectRssDynamics);
     }
     sprintf( sWorld, "world: {timeIndex:%ld, size:%ld}%s", worldModel.timeIndex, worldModel.scenes.size(), temp.c_str());
+//    std::cout << sWorld << std::endl;
+
+    // 调用RSS检查主函数
+//    std::cout << "start check" << std::endl;
+    rssCheck.calculateAccelerationRestriction(worldModel, situationSnapshot, rssStateSnapshot, properResponse, accelerationRestriction);
+//    std::cout << "end check" << std::endl;
+
+    // 将安全限制转化为控制参数
+    control.throttle = -1;
+    control.brake = -1;
+    control.steer = -1;
+    ::ad::physics::Acceleration zeroAccel(0.0);
+    if( accelerationRestriction.longitudinalRange.maximum < zeroAccel ) {
+        control.throttle = 0;
+        double sumBrakeTorque = 1370 * std::fabs(static_cast<double>(accelerationRestriction.longitudinalRange.minimum)) * 36 /100.0;
+        control.brake = std::min(static_cast<float>(sumBrakeTorque / 6000.0), 1.0f);
+    }
+    ::ad::rss::world::Velocity egoVelocity = egoVehicle.velocity;
+    if( accelerationRestriction.lateralLeftRange.maximum <= ::ad::physics::Acceleration(0.0)) {
+        if (egoVelocity.speedLatMax < ::ad::physics::Speed(0.0)) {
+          // driving to the left
+          if (egoVelocity.speedLonMax != ::ad::physics::Speed(0.0)) {
+            double angle = std::atan(egoVelocity.speedLatMax / egoVelocity.speedLonMax);
+            control.steer = -1.f * static_cast<float>(angle);
+          }
+        }
+    }
+    if (accelerationRestriction.lateralRightRange.maximum <= ::ad::physics::Acceleration(0.0)) {
+        if (egoVelocity.speedLatMax > ::ad::physics::Speed(0.0)) {
+          // driving to the right
+          if (egoVelocity.speedLonMax != ::ad::physics::Speed(0.0)) {
+            double angle = std::atan(egoVelocity.speedLatMax / egoVelocity.speedLonMax);
+            control.steer = -1.f * static_cast<float>(angle);
+          }
+        }
+    }
+
+//    sWorld.clear();
+//    sSituation.clear();
+//    sState.clear();
+//    sResponse.clear();
+//    sRestriction.clear();
     
+//    sWorld << worldModel << std::endl;
+//    std::cout << worldModel << std::endl;
+
+    
+//    std::cout << "start situation log" << std::endl;
     // 查看状况中间结果
 //    sSituation << "\033[31msituationSnapshot\033[0m: timeIndex: " << situationSnapshot.timeIndex;
 //    sSituation << ", size: " << situationSnapshot.situations.size() << std::endl;
@@ -175,6 +238,7 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     }
     sprintf( sSituation, "situationSnapshot: {timeIndex:%ld, size:%ld}\n%s", situationSnapshot.timeIndex, situationSnapshot.situations.size(), temp.c_str());
     
+//    std::cout << "start state log" << std::endl;
     // 查看状态中间结果
 //    sState << "\033[31mrssStateSnapshot\033[0m: timeIndex: " << rssStateSnapshot.timeIndex;
 //    sState << ", size: " << rssStateSnapshot.individualResponses.size() << std::endl;
@@ -206,6 +270,7 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     }
     sprintf( sState, "rssStateSnapshot: {timeIndex:%ld, size:%ld}\n%s", rssStateSnapshot.timeIndex, rssStateSnapshot.individualResponses.size(), temp.c_str());
     
+//    std::cout << "start response log" << std::endl;
     // 查看正确响应中间结果
     auto &t = properResponse;
     temp = "";
@@ -217,6 +282,7 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     temp += "\n  lateralResponseLeft:" + tt.substr(tt.rfind(':')+1);
     sprintf( sResponse, "properResponse: {timeIndex:%ld, %s, dangerousObjects:%s}\n%s", properResponse.timeIndex, (t.isSafe?"safe":"\033[31mdanger\033[0m"), std::to_string(t.dangerousObjects).c_str(), temp.c_str());
 
+//    std::cout << "start restriction log" << std::endl;
     // 查看安全限制
     auto &p = accelerationRestriction;
     temp = "";
@@ -225,6 +291,7 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other) {
     temp += "\n  lateralLeftRange: " + std::to_string(p.lateralLeftRange.minimum) + " ~ " + std::to_string(p.lateralLeftRange.maximum);
     sprintf( sRestriction, "accelerationRestriction: {timeIndex:%ld}\n%s", accelerationRestriction.timeIndex, temp.c_str());
 
+//    std::cout << "end all log" << std::endl;
     return 1;
 }
 
@@ -248,25 +315,36 @@ std::string ssRestriction() {
     return std::string(sRestriction);
 }
 
+std::string version() {
+    return std::string("2020/5/15 10:59");
+}
+
 BOOST_PYTHON_MODULE(rssw) {
-    class_<Lane>("Lane", init<double,double,double,double,double>())
+    class_<Lane>("Lane", init<double,double,double,double,double,int>())
         .def("str", &Lane::str)
 //        .def("sum", &Lane::sum)
         .def_readwrite("x", &Lane::x)
         .def_readwrite("y", &Lane::y)
         .def_readwrite("length", &Lane::length)
         .def_readwrite("width", &Lane::width)
-        .def_readwrite("heading", &Lane::heading);
+        .def_readwrite("heading", &Lane::heading)
+        .def_readwrite("id", &Lane::id);
     class_<Vehicle>("Vehicle", init<double,double,double,double>())
         .def("str", &Vehicle::str)
         .def_readwrite("x", &Vehicle::x)
         .def_readwrite("y", &Vehicle::y)
         .def_readwrite("heading", &Vehicle::heading)
         .def_readwrite("velocity", &Vehicle::velocity);
+    class_<VControl>("VControl", init<>())
+        .def("str", &VControl::str)
+        .def_readwrite("throttle", &VControl::throttle)
+        .def_readwrite("brake", &VControl::brake)
+        .def_readwrite("steer", &VControl::steer);
     def("RssCheck", RssCheck);
     def("ssWorld", ssWorld);
     def("ssSituation", ssSituation);
     def("ssState", ssState);
     def("ssResponse", ssResponse);
     def("ssRestriction", ssRestriction);
+    def("version", version);
 }

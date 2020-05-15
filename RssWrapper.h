@@ -8,8 +8,8 @@
 
 struct Lane {
 //    Lane() {}
-    Lane(double x, double y, double length, double width, double heading): 
-        x(x), y(y), length(length), width(width), heading(heading) {}
+    Lane(double x, double y, double length, double width, double heading, int id): 
+        x(x), y(y), length(length), width(width), heading(heading), id(id) {}
     std::string str() {
 //        static std::stringstream temp;
 //        temp.clear();
@@ -18,7 +18,7 @@ struct Lane {
 //        static auto temp = boost::format("Lane(x=%f, y=%f, length=%f, width=%f, heading=%f\n") % x % y % length % width % heading;
 //        std::cout << temp;
         static char buffer[1000];
-        sprintf(buffer, "Lane(x=%f, y=%f, length=%f, width=%f, heading=%f\n", x, y, length, width, heading);
+        sprintf(buffer, "Lane(x=%f, y=%f, length=%f, width=%f, heading=%f, id=%d\n", x, y, length, width, heading, id);
         return std::string(buffer);
     }
 //    int sum() {
@@ -29,6 +29,7 @@ struct Lane {
     double length;
     double width;
     double heading;
+    int id;
 };
 
 struct Vehicle {
@@ -49,4 +50,29 @@ struct Vehicle {
     double velocity;
 };
 
-int RssCheck(Lane, Vehicle, Vehicle);
+struct VControl {
+//    VControl(double throttle, double brake, double steer):
+//        throttle(throttle), brake(brake), steer(steer) {}
+    VControl() {
+        throttle = 0;
+        brake = 0;
+        steer = 0;
+    }
+    std::string str() {
+        static char buffer[1000];
+        sprintf(buffer, "VControl(throttle=%f, brake=%f, steer=%f\n", throttle, brake, steer);
+        return std::string(buffer);
+    }
+    double throttle;
+    double brake;
+    double steer;
+};
+
+extern "C" int RssCheck(Lane, Vehicle, Vehicle, VControl&);
+
+extern "C" std::string ssWorld(void);
+extern "C" std::string ssSituation();
+extern "C" std::string ssState();
+extern "C" std::string ssResponse();
+extern "C" std::string ssRestriction();
+extern "C" std::string version();

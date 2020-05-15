@@ -1,0 +1,2 @@
+g++ -I/usr/local/include -I/usr/include/python3.7m -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu -fPIC -shared -o rssw.so RssWrapper.cpp -lad_rss -lad_map_access -lad_physics -lspdlog -lpython3.7m -lboost_python3
+g++ -I/usr/local/include -I/usr/include/python3.7m -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu -g -Wall -O3 -o check check.cpp RssWrapper.cpp -lad_rss -lad_map_access -lad_physics -lspdlog -lpython3.7m -lboost_python3
