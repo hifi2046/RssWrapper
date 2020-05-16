@@ -26,7 +26,11 @@ static char sRestriction[10000];
 
 void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, Lane &lane, Vehicle &v, float xx, float yy) {
     ::ad::rss::world::OccupiedRegion r;
-    double s, t, theta, cost, sint, x, y, x0, y0, ss, tt;
+    double s, t, theta, cost, sint, x, y, x0, y0;
+//    double ss, tt;
+    double ssmin, ssmax, ttmin, ttmax;
+    double x_extent = 1.1;
+    double y_extent = 0.74;
     theta = lane.heading;
     cost = cos((theta - 90)*PI/180.0);
     sint = sin((theta - 90)*PI/180.0);
@@ -36,13 +40,19 @@ void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, La
     y0 = lane.y;
     s = (y - y0)*cost - (x - x0)*sint;
     t = (x - x0)*cost + (y - y0)*sint;
-    ss = s / lane.length;
-    tt = t / lane.width + 0.5;
-    r.segmentId = 43;
-    r.lonRange.minimum=::ad::physics::ParametricValue(ss);
-    r.lonRange.maximum=::ad::physics::ParametricValue(ss);
-    r.latRange.minimum=::ad::physics::ParametricValue(tt);
-    r.latRange.maximum=::ad::physics::ParametricValue(tt);
+//    ss = s / lane.length;
+//    tt = t / lane.width + 0.5;
+    ssmin = (s - x_extent) / lane.length;
+    ttmin = (t - y_extent) / lane.width + 0.5;
+    ssmax = (s + x_extent) / lane.length;
+    ttmax = (t + y_extent) / lane.width + 0.5;
+    if( ssmin < 0 || ttmin < 0 || ssmax > 1 || ttmax > 1 )
+        printf("wrong region extent: %f %f %f %f\n", ssmin, ttmin, ssmax, ttmax);
+    r.segmentId = lane.id;
+    r.lonRange.minimum=::ad::physics::ParametricValue(ssmin);
+    r.lonRange.maximum=::ad::physics::ParametricValue(ssmax);
+    r.latRange.minimum=::ad::physics::ParametricValue(ttmin);
+    r.latRange.maximum=::ad::physics::ParametricValue(ttmax);
 //    r.lonRange.minimum=::ad::physics::ParametricValue(s);
 //    r.lonRange.maximum=::ad::physics::ParametricValue(s);
 //    r.latRange.minimum=::ad::physics::ParametricValue(t);
