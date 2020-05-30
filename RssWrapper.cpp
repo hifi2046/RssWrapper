@@ -24,7 +24,7 @@ static char sState[10000];
 static char sResponse[10000];
 static char sRestriction[10000];
 
-void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, Lane &lane, Vehicle &v, float xx, float yy) {
+void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, Lane &lane, Vehicle &v, bool &bInDirection) {
     ::ad::rss::world::OccupiedRegion r;
     double s, t, theta, cost, sint, x, y, x0, y0;
 //    double ss, tt;
@@ -49,10 +49,18 @@ void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, La
     if( ssmin < 0 || ttmin < 0 || ssmax > 1 || ttmax > 1 )
         printf("wrong region extent: %f %f %f %f\n", ssmin, ttmin, ssmax, ttmax);
     r.segmentId = lane.id;
-    r.lonRange.minimum=::ad::physics::ParametricValue(ssmin);
-    r.lonRange.maximum=::ad::physics::ParametricValue(ssmax);
-    r.latRange.minimum=::ad::physics::ParametricValue(ttmin);
-    r.latRange.maximum=::ad::physics::ParametricValue(ttmax);
+    if( bInDirection ) {
+        r.lonRange.minimum=::ad::physics::ParametricValue(ssmin);
+        r.lonRange.maximum=::ad::physics::ParametricValue(ssmax);
+        r.latRange.minimum=::ad::physics::ParametricValue(ttmin);
+        r.latRange.maximum=::ad::physics::ParametricValue(ttmax);
+    }
+    else {
+        r.lonRange.minimum=::ad::physics::ParametricValue(1-ssmax);
+        r.lonRange.maximum=::ad::physics::ParametricValue(1-ssmin);
+        r.latRange.minimum=::ad::physics::ParametricValue(1-ttmax);
+        r.latRange.maximum=::ad::physics::ParametricValue(1-ttmin);
+    }
 //    r.lonRange.minimum=::ad::physics::ParametricValue(s);
 //    r.lonRange.maximum=::ad::physics::ParametricValue(s);
 //    r.latRange.minimum=::ad::physics::ParametricValue(t);
@@ -60,10 +68,19 @@ void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, La
     bounds.push_back(r);
 }
 
-void calculateLatLonVelocities(::ad::rss::world::Velocity &velocity, Lane &lane, Vehicle &v) {
+void calculateLatLonVelocities(::ad::rss::world::Velocity &velocity, Lane &lane, Vehicle &v, bool &bInDirection) {
     double angle = (v.heading - lane.heading)*PI/180.0;
+    int factor;
+    if( angle > PI/2 || angle < -PI/2 ) {
+        bInDirection = false;
+        factor = -1;
+    }
+    else {
+        bInDirection = true;
+        factor = 1;
+    }
     double vlon = std::abs(v.velocity*cos(angle));
-    double vlat = std::abs(v.velocity*sin(angle));
+    double vlat = v.velocity*sin(angle) * factor;
 //    velocity.speedLonMin = ::ad::physics::Speed(13);
 //    velocity.speedLonMax = ::ad::physics::Speed(13);
 //    velocity.speedLatMin = ::ad::physics::Speed(0);
@@ -100,15 +117,16 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, VControl &control) {
     // 计算车辆位姿数据
     ::ad::rss::world::Object egoVehicle;
     ::ad::rss::world::Object otherVehicle;
+    bool bInDirection = true;
     egoVehicle.objectId=23;
     egoVehicle.objectType=::ad::rss::world::ObjectType::EgoVehicle;
-    calculateOccupiedRegions( egoVehicle.occupiedRegions, lane, ego, 0.1, 0.3 );
-    calculateLatLonVelocities( egoVehicle.velocity, lane, ego );
+    calculateLatLonVelocities( egoVehicle.velocity, lane, ego, bInDirection );
+    calculateOccupiedRegions( egoVehicle.occupiedRegions, lane, ego, bInDirection );
 
     otherVehicle.objectId=24;
     otherVehicle.objectType=::ad::rss::world::ObjectType::OtherVehicle;
-    calculateOccupiedRegions( otherVehicle.occupiedRegions, lane, other, 0.5, 0.3 );
-    calculateLatLonVelocities( otherVehicle.velocity, lane, other );
+    calculateLatLonVelocities( otherVehicle.velocity, lane, other, bInDirection );
+    calculateOccupiedRegions( otherVehicle.occupiedRegions, lane, other, bInDirection );
 
     // 计算道路数据
     ::ad::rss::world::RoadArea roadArea;
