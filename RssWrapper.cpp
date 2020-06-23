@@ -364,7 +364,7 @@ std::string ssRestriction() {
 }
 
 std::string version() {
-    return std::string("2020/5/15 10:59");
+    return std::string("2020/6/23 15:12");
 }
 
 BOOST_PYTHON_MODULE(rssw) {
@@ -393,6 +393,25 @@ BOOST_PYTHON_MODULE(rssw) {
         .def_readwrite("front", &Restriction::front)
         .def_readwrite("left", &Restriction::left)
         .def_readwrite("right", &Restriction::right);
+    class_<Setting>("Setting", init<>())
+        .def("str", &Setting::str)
+        .def("friction", &Setting::friction)
+        .def_readwrite("style", &Setting::style)
+        .def_readwrite("weather", &Setting::weather)
+        .def_readwrite("surface", &Setting::surface);
+    class_<Dynamics>("Dynamics", init<>())
+        .def("str", &Dynamics::str)
+        .def_readwrite("accelMax", &Dynamics::accelMax)
+        .def_readwrite("brakeMax", &Dynamics::brakeMax)
+        .def_readwrite("brakeMin", &Dynamics::brakeMin)
+        .def_readwrite("brakeMinCorrect", &Dynamics::brakeMinCorrect)
+        .def_readwrite("accelMaxLat", &Dynamics::accelMaxLat)
+        .def_readwrite("brakeMinLat", &Dynamics::brakeMinLat)
+        .def_readwrite("responseTime", &Dynamics::responseTime)
+        .def_readwrite("brakeLeaving", &Dynamics::brakeLeaving)
+        .def_readwrite("brakeFollowing", &Dynamics::brakeFollowing)
+        .def_readwrite("brakeApproaching", &Dynamics::brakeApproaching)
+        .def_readwrite("k", &Dynamics::k);
     def("RssCheck", RssCheck);
     def("RssRestrict", RssRestrict);
     def("ssWorld", ssWorld);
