@@ -40,8 +40,10 @@ int main() {
     std::cout << x << " " << y << " " << heading << " " << velocity << std::endl;
     Vehicle other(x,y,heading,velocity);
     VControl control;
+    Restriction restriction;
 //    std::string sWorld = ssWorld();
-    RssCheck(lane, ego, other, control);
+    RssCheck(lane, ego, other, restriction);
+    RssRestrict(restriction, control);
     std::cout << control.str();
     std::cout << ssWorld() << std::endl;
     std::cout << ssSituation() << std::endl;

@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include "ad/rss/core/RssCheck.hpp"
+#include "ad/rss/world/AccelerationRestriction.hpp"
 #include <boost/format.hpp>
 
 struct Lane {
@@ -68,7 +69,24 @@ struct VControl {
     double steer;
 };
 
-extern "C" int RssCheck(Lane, Vehicle, Vehicle, VControl&);
+struct Restriction {
+    Restriction() {
+        front = 0;
+        left = 0;
+        right = 0;
+    }
+    std::string str() {
+        static char buffer[1000];
+        sprintf(buffer, "Restriction(front=%f, left=%f, right=%f\n", front, left, right);
+        return std::string(buffer);
+    }
+    double front;
+    double left;
+    double right;
+};
+
+extern "C" int RssCheck(Lane, Vehicle, Vehicle, Restriction&);
+extern "C" int RssRestrict(Restriction, VControl&);
 
 extern "C" std::string ssWorld(void);
 extern "C" std::string ssSituation();
