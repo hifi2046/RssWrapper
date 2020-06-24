@@ -25,6 +25,8 @@ static char sResponse[10000];
 static char sRestriction[10000];
 
 ::ad::rss::world::Object egoVehicle;
+Dynamics egoDynamics;
+Setting scenarioSettings;
 
 void calculateOccupiedRegions(::ad::rss::world::OccupiedRegionVector &bounds, Lane &lane, Vehicle &v, bool &bInDirection) {
     ::ad::rss::world::OccupiedRegion r;
@@ -92,6 +94,15 @@ void calculateLatLonVelocities(::ad::rss::world::Velocity &velocity, Lane &lane,
     velocity.speedLatMin = ::ad::physics::Speed(vlat);
     velocity.speedLatMax = ::ad::physics::Speed(vlat);
 }
+int RssSet(Dynamics d) {
+    egoDynamics = d;
+    return 1;
+}
+
+int RssScenario(Setting t) {
+    scenarioSettings = t;
+    return 1;
+}
 
 // use global variable: egoVehicle, which is passed by RssCheck
 int RssRestrict(Restriction restriction, VControl &control) {
@@ -152,13 +163,13 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
     // ���ó�������ѧ����
     worldModel.timeIndex = 16;
     worldModel.defaultEgoVehicleRssDynamics = ::ad::rss::world::RssDynamics();
-    worldModel.defaultEgoVehicleRssDynamics.alphaLon.accelMax = ::ad::physics::Acceleration(3.5);
-    worldModel.defaultEgoVehicleRssDynamics.alphaLon.brakeMax = ::ad::physics::Acceleration(-8.);
-    worldModel.defaultEgoVehicleRssDynamics.alphaLon.brakeMin = ::ad::physics::Acceleration(-4.);
-    worldModel.defaultEgoVehicleRssDynamics.alphaLon.brakeMinCorrect = ::ad::physics::Acceleration(-3);
-    worldModel.defaultEgoVehicleRssDynamics.alphaLat.accelMax = ::ad::physics::Acceleration(0.2);
-    worldModel.defaultEgoVehicleRssDynamics.alphaLat.brakeMin = ::ad::physics::Acceleration(-0.8);
-    worldModel.defaultEgoVehicleRssDynamics.responseTime = ::ad::physics::Duration(1.);
+    worldModel.defaultEgoVehicleRssDynamics.alphaLon.accelMax = ::ad::physics::Acceleration(egoDynamics.accelMax);
+    worldModel.defaultEgoVehicleRssDynamics.alphaLon.brakeMax = ::ad::physics::Acceleration(egoDynamics.brakeMax);
+    worldModel.defaultEgoVehicleRssDynamics.alphaLon.brakeMin = ::ad::physics::Acceleration(egoDynamics.brakeMin);
+    worldModel.defaultEgoVehicleRssDynamics.alphaLon.brakeMinCorrect = ::ad::physics::Acceleration(egoDynamics.brakeMinCorrect);
+    worldModel.defaultEgoVehicleRssDynamics.alphaLat.accelMax = ::ad::physics::Acceleration(egoDynamics.accelMaxLat);
+    worldModel.defaultEgoVehicleRssDynamics.alphaLat.brakeMin = ::ad::physics::Acceleration(egoDynamics.brakeMinLat);
+    worldModel.defaultEgoVehicleRssDynamics.responseTime = ::ad::physics::Duration(egoDynamics.responseTime);
     
     // ���㳵��λ������
 //    ::ad::rss::world::Object egoVehicle;
@@ -414,6 +425,8 @@ BOOST_PYTHON_MODULE(rssw) {
         .def_readwrite("k", &Dynamics::k);
     def("RssCheck", RssCheck);
     def("RssRestrict", RssRestrict);
+    def("RssSet", RssSet);
+    def("RssScenario", RssScenario);
     def("ssWorld", ssWorld);
     def("ssSituation", ssSituation);
     def("ssState", ssState);

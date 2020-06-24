@@ -158,6 +158,8 @@ struct Dynamics {
 
 extern "C" int RssCheck(Lane, Vehicle, Vehicle, Restriction&);
 extern "C" int RssRestrict(Restriction, VControl&);
+extern "C" int RssSet(Dynamics);
+extern "C" int RssScenario(Setting);
 
 extern "C" std::string ssWorld(void);
 extern "C" std::string ssSituation();
