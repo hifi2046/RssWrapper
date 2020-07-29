@@ -2,12 +2,16 @@
 #include <string.h>
 #include "RssWrapper.h"
 #include <string>
+#include "spdlog/fmt/ostr.h"
+#include "spdlog/spdlog.h"
 //#include <dlfcn.h>
 
 int main() {
 //    auto handle = dlopen("librssw.so", RTLD_LAZY);
 //    typedef std::string (*func)(void);
 //    auto ssWorld = (func)dlsym( handle, "ssWorld");
+    spdlog::info("start");
+    spdlog::set_level(spdlog::level::debug);
     std::cout << "rssw versoin: " << version() << std::endl;
     FILE* f=fopen("input-check.dat","r");
     char buffer[1000];
@@ -29,15 +33,15 @@ int main() {
     std::stringstream in(sLane);
     double x,y,length,width,heading,velocity,lid;
     in >> x >> y >> length >> width >> heading >> lid;
-    std::cout << x << " " << y << " " << length << " " << width << " " << heading << " " << lid << std::endl;
+    std::cout << "lane: x=" << x << ", y=" << y << ", length=" << length << ", width=" << width << ", heading=" << heading << ", lid=" << lid << std::endl;
     Lane lane(x,y,length,width,heading,lid);
     std::stringstream in2(sEgo);
     in2 >> x >> y >> heading >> velocity;
-    std::cout << x << " " << y << " " << heading << " " << velocity << std::endl;
+    std::cout << "ego: x=" << x << ", y=" << y << ", heading=" << heading << ", velocity=" << velocity << std::endl;
     Vehicle ego(x,y,heading,velocity);
     std::stringstream in3(sOther);
     in3 >> x >> y >> heading >> velocity;
-    std::cout << x << " " << y << " " << heading << " " << velocity << std::endl;
+    std::cout << "other: x=" << x << ", y=" << y << ", heading=" << heading << ", velocity=" << velocity << std::endl;
     Vehicle other(x,y,heading,velocity);
     VControl control;
     Restriction restriction;
