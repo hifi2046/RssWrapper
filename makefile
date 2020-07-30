@@ -1,5 +1,7 @@
 main:
 	g++ -I/usr/local/include -I/usr/include/python3.7m -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu -fPIC -shared -o rssw.so RssWrapper.cpp -lad_rss -lad_map_access -lad_physics -lspdlog -lpython3.7m -lboost_python3
+py2:
+	g++ -I/usr/local/include -I/usr/include/python2.7 -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu -fPIC -shared -o rssw.so RssWrapper.cpp -lad_rss -lad_map_access -lad_physics -lspdlog -lpython2.7 -lboost_python27
 install:
 	cp rssw.so ../InTraceControl
 check: check.cpp RssWrapper.cpp

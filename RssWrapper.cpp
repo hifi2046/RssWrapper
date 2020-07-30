@@ -176,10 +176,10 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
     ::ad::rss::world::WorldModel worldModel;
     ::ad::rss::state::AccelerationRestriction accelerationRestriction;
 
-    auto logger = spdlog::basic_logger_mt("basic_logger", "asg-p.log");
-    logger->set_level(spdlog::level::debug);
+//    auto logger = spdlog::basic_logger_mt("rssw_logger", "asg-p.log");
+//    logger->set_level(spdlog::level::debug);
     spdlog::set_level(spdlog::level::debug);
-    logger->info("ASG-P demostration");
+//    logger->info("ASG-P demostration");
     
     if( lane.length < 5 ) lane.length = 10;
     if( lane.width < 5 ) lane.width = 5;
