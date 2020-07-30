@@ -274,6 +274,9 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
         auto& s = v.velocity;
         temp += ", velocity: {lon: " + std::to_string(s.speedLonMin) + "~" + std::to_string(s.speedLonMax);
         temp += ", lat: " + std::to_string(s.speedLatMin) + "~" + std::to_string(s.speedLatMax) + "}}";
+        temp += "\n      acceleration:" + std::to_string(v.acceleration) + ", speedLimit:" + std::to_string(v.speedLimit) + ", slope:" + std::to_string(v.slope);
+        auto& st = v.state;
+        temp += "\n      state: {yaw:" + std::to_string(st.yaw) + ", dimension:(" + std::to_string(st.dimension.length) + "," + std::to_string(st.dimension.width) + "), yawRate:" + std::to_string(st.yawRate) + ", centerPoint:(" + std::to_string(st.centerPoint.x) + "," + std::to_string(st.centerPoint.y) + "), speed:" + std::to_string(st.speed) + ", steeringAngle:" + std::to_string(st.steeringAngle);
         for( auto& r : v.occupiedRegions) {
             temp += "\n      - occupiedRegion: {segmentId:" + std::to_string(r.segmentId);
             temp += ", lonRange: " + std::to_string(r.lonRange.minimum) + " ~ " + std::to_string(r.lonRange.maximum);
@@ -286,6 +289,9 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
         s = v2.velocity;
         temp += ", velocity: {lon: " + std::to_string(s.speedLonMin) + "~" + std::to_string(s.speedLonMax);
         temp += ", lat: " + std::to_string(s.speedLatMin) + "~" + std::to_string(s.speedLatMax) + "}}";
+        temp += "\n      acceleration:" + std::to_string(v2.acceleration) + ", speedLimit:" + std::to_string(v2.speedLimit) + ", slope:" + std::to_string(v2.slope);
+        st = v2.state;
+        temp += "\n      state: {yaw:" + std::to_string(st.yaw) + ", dimension:(" + std::to_string(st.dimension.length) + "," + std::to_string(st.dimension.width) + "), yawRate:" + std::to_string(st.yawRate) + ", centerPoint:(" + std::to_string(st.centerPoint.x) + "," + std::to_string(st.centerPoint.y) + "), speed:" + std::to_string(st.speed) + ", steeringAngle:" + std::to_string(st.steeringAngle);
         for( auto& r : v2.occupiedRegions) {
             temp += "\n      - occupiedRegion: {segmentId:" + std::to_string(r.segmentId);
             temp += ", lonRange: " + std::to_string(r.lonRange.minimum) + " ~ " + std::to_string(r.lonRange.maximum);
