@@ -200,6 +200,10 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
     worldModel.defaultEgoVehicleRssDynamics.unstructuredSettings.vehicleYawRateChange = ::ad::physics::AngularAcceleration(0);
     worldModel.defaultEgoVehicleRssDynamics.unstructuredSettings.vehicleMinRadius = ::ad::physics::Distance(1);
     worldModel.defaultEgoVehicleRssDynamics.unstructuredSettings.vehicleTrajectoryCalculationStep = ::ad::physics::Duration(0.1);
+    worldModel.defaultEgoVehicleRssDynamics.brakeLeaving = 2;
+    worldModel.defaultEgoVehicleRssDynamics.brakeFollowing = 3;
+    worldModel.defaultEgoVehicleRssDynamics.brakeApproaching = 4;
+    worldModel.defaultEgoVehicleRssDynamics.k = 4;
     
     // ���㳵��λ������
 //    ::ad::rss::world::Object egoVehicle;
@@ -207,12 +211,18 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
     bool bInDirection = true;
     egoVehicle.objectId=23;
     egoVehicle.objectType=::ad::rss::world::ObjectType::EgoVehicle;
+    egoVehicle.acceleration=0;
+    egoVehicle.speedLimit=16.7;
+    egoVehicle.slope=0;
     calculateLatLonVelocities( egoVehicle.velocity, lane, ego, bInDirection );
     calculateOccupiedRegions( egoVehicle.occupiedRegions, lane, ego, bInDirection );
     calculateObjectState( egoVehicle.state );
 
     otherVehicle.objectId=24;
     otherVehicle.objectType=::ad::rss::world::ObjectType::OtherVehicle;
+    otherVehicle.acceleration=0;
+    otherVehicle.speedLimit=16.7;
+    otherVehicle.slope=0;
     calculateLatLonVelocities( otherVehicle.velocity, lane, other, bInDirection );
     calculateOccupiedRegions( otherVehicle.occupiedRegions, lane, other, bInDirection );
     calculateObjectState( otherVehicle.state );
@@ -247,6 +257,7 @@ int RssCheck(Lane lane, Vehicle ego, Vehicle other, Restriction &restriction) {
     scene.egoVehicle = egoVehicle;
     scene.egoVehicleRssDynamics = worldModel.defaultEgoVehicleRssDynamics;
     scene.egoVehicleRoad = roadArea;
+    scene.settings.friction = 0;
     worldModel.scenes.push_back(scene);
     
     std::string temp, tt;
